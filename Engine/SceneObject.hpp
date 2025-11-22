@@ -137,6 +137,7 @@ protected:
    bool pendingLookAt{ false };
    bool pendingTrack{ false };
    bool pendingTether{ false };
+   void updateSelf( UpdateParams& );
    
 private:
    std::string name;

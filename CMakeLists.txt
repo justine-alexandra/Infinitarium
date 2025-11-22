@@ -30,8 +30,14 @@ include_directories("./ImGui")
 find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
+# Python3
 find_package(Python3 COMPONENTS Development)
 include_directories(${Python3_INCLUDE_DIRS})
+
+# SQLite
+find_package(SQLite3)
+include_directories(${SQLite3_INCLUDE_DIR})
+#target_link_libraries (Infinitarium ${SQLite3_LIBRARY})
 
 add_subdirectory( Mechanics )
 

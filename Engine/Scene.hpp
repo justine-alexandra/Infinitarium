@@ -63,7 +63,7 @@ public:
        return _timeMultiplier;
    }
    void timeMultiplier( int t ) {
-        return _timeMultiplier = t;
+       _timeMultiplier = t;
    }
    ////////////////////////
    

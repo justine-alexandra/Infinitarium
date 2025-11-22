@@ -14,7 +14,7 @@ BOOST_CLASS_EXPORT_IMPLEMENT(Transform)
 static constexpr double HoursToMilliseconds = 1000.0 * 60.0 * 60.0;
 
 Transform::Transform() : transform(glm::mat4(1.0)),
-    positionCallbackId(OrbitalFactory::PositionCallback::None),
+    positionCallbackId(IOrbitalFactory::PositionCallback::None),
     up(glm::dvec3(0.0,1.0,0.0)),
     rotationRate(0.0) {
 }
@@ -31,7 +31,7 @@ void Transform::update( UpdateParams& params ) {
    }
     
    if( rotationRate ) // In hours per full rotation (sidereal)
-      rotateInternal( params.getScene().simulationTimeDelta().count() / (rotationRate * HoursToMilliseconds) * 2.0*M_PI, up );
+      rotateInternal( params.getScene().simulationTimeDelta().count() / (rotationRate * HoursToMilliseconds) * 2.0* glm::pi<double>(), up );
     
    params.addModel( transform );
    SceneObject::update( params );
@@ -101,8 +101,8 @@ template<class Archive> void Transform::load( Archive& ar ) {
     ar >> rotationRate;
     
     // Instance our position callback if defined
-    if( positionCallbackId != OrbitalFactory::PositionCallback::None )
-        positionCallback = OrbitalFactory::instance().orbitalSampler(positionCallbackId);
+    if( positionCallbackId != IOrbitalFactory::PositionCallback::None )
+        positionCallback = IOrbitalFactory::instance().orbitalSampler(positionCallbackId);
 }
 
 template<class Archive> void Transform::save( Archive& ar ) const {

@@ -8,32 +8,36 @@
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #include <glm/glm.hpp>
 
-class OrbitalFactory {
+class IOrbitalFactory {
 public:
     enum class PositionCallback {
-       None,
-       Sun,
-       Mercury,
-       Venus,
-       Earth,
-       Earth_Moon,
-       Mars,
-       Mars_Phobos,
-       Mars_Demos,
-       Saturn,
-       Jupiter,
-       Uranus,
-       Neptune,
-       Pluto
+        None,
+        Sun,
+        Mercury,
+        Venus,
+        Earth,
+        Earth_Moon,
+        Mars,
+        Mars_Phobos,
+        Mars_Demos,
+        Saturn,
+        Jupiter,
+        Uranus,
+        Neptune,
+        Pluto
     };
-    
+
     using PositionCallbackFun = std::function<void(double, glm::dvec3&)>;
-    
-    MECHANICS_EXPORT static const OrbitalFactory& instance();
-    
-    PositionCallbackFun orbitalSampler( PositionCallback ) const;
-    
+
+    MECHANICS_EXPORT static const IOrbitalFactory& instance();
+
+    virtual PositionCallbackFun orbitalSampler(PositionCallback) const = 0;
+
 private:
-    static std::unique_ptr<OrbitalFactory> _instance;
-    OrbitalFactory() {}
+    static std::unique_ptr<IOrbitalFactory> _instance;
+};
+
+class OrbitalFactory : public IOrbitalFactory {
+public:
+    PositionCallbackFun orbitalSampler( PositionCallback ) const override;
 };

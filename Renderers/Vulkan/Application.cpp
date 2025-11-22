@@ -49,6 +49,7 @@ WinApplication::WinApplication() : vkInstance(nullptr), xrInstance(nullptr) {
 
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
+	createInfo.pNext = nullptr;
 
 	uint32_t glfwExtensionCount = 0;
 	const char** glfwExt = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);

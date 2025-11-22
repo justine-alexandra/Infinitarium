@@ -90,35 +90,38 @@ img = None
 coordRoot = engine.UniversalPoint( 0, 0, 0, engine.Unit.Parsec ) # Center in parent coordinate system units
 solRoot = engine.UniversalPoint( 0, 0, 0, engine.Unit.AstronomicalUnit ) # We want to initialize in the solar system
 motionController.setHomeSystem( solRoot )
-coordSystem = engine.CoordinateSystem( coordRoot, 50000, engine.Unit.AstronomicalUnit )
+coordSystem = engine.CoordinateSystem( coordRoot, 50000, engine.Unit.AstronomicalUnit ) # 50000AU as aprox. soloar system radius
+coordSystem.setName( 'Solar System' )
 coordSystem.setQuery( 'SELECT name FROM SolarSystem WHERE name IS NOT NULL ORDER BY name ASC;' )
 coordSystem.setLabel( 'Solar System' )
 
-# Create spheroid and add to scene ----------------------------------------------------------------
+# Create Coordinate System for Jupiter -------------------------------------------------------
 insertBodyQuery = '''INSERT INTO SolarSystem (id, name) VALUES (?,?);'''
+data_tuple = ( 4, 'Jupiter' )
+cursor.execute( insertBodyQuery, data_tuple )
 
-position = engine.Transform() 
-position.translate( 0.0, 0.0, -4.0 )
-position.setPositionCallback( engine.PositionCallbackId.Jupiter ) 
+sphere = engine.Spheroid(40, 40, 0.0, False) # meridians, parellels, oblateness (always unit size)
+sphere.setName( 'Jupiter' )
+sphere.setProgram('solarBody')
+sphere.setTexture( texture )
+
+jupPosition = engine.Transform() 
+jupPosition.translate( 0.0, 0.0, -4.0 )
+jupPosition.setPositionCallback( engine.PositionCallbackId.Jupiter ) 
 
 rotation = engine.Transform()
 rotation.rotate( 90.0, 1.0, 0.0, 0.0 ) 
 rotation.setRotation( 9.9250 ) # sidereal rotation period (hrs)
 
-sphere = engine.Spheroid(40, 40, 0.0, False) # meridians, parellels, oblateness (always unit size)
+jupiterRoot = engine.UniversalPoint( 0, 0, 0, engine.Unit.AstronomicalUnit )
+jupiterSystem = engine.CoordinateSystem( jupiterRoot, 24000000, engine.Unit.Kilometer ) # Sinope is ~24M km from Jupiter (most distant)
+jupiterSystem.setName( 'Jupiter System' )
 
-data_tuple = ( 4, 'Jupiter' )
-cursor.execute( insertBodyQuery, data_tuple )
-sphere.setName( 'Jupiter' )
+jupPosition.addChild( jupiterSystem )
+jupiterSystem.addChild( sphere )
 
-sphere.setProgram('solarBody')
-
-sphere.setTexture( texture )
-
-coordSystem.addChild( rotation )
-rotation.addChild( position )
-position.addChild( sphere )
-
+# Add sub-systems to solar system and add to main camera ------------------------------------------
+coordSystem.addChild( jupPosition ) 
 mainCamera.addChild( coordSystem )
 
 dbConnection.commit()

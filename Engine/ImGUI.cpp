@@ -42,7 +42,8 @@ ImGUI::ImGUI() {
 		ImGui::PushID(reinterpret_cast<unsigned long long>(&obj));
 
 		ImGui::AlignTextToFramePadding();
-		bool open = ImGui::TreeNode((void*)&obj, "%s", type_name<decltype(obj)>().c_str());
+		bool open = ImGui::TreeNode((void*)&obj, "%s", //type_name<decltype(obj)>().c_str());
+			typeid(obj).name());
 		ImGui::NextColumn();
 		ImGui::AlignTextToFramePadding();
         ImGui::Text("%s", obj.getName().c_str());

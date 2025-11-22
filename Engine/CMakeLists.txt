@@ -10,6 +10,22 @@ add_definitions(-DENGINE_BUILD)
 
 set_property( GLOBAL PROPERTY USE_FOLDERS ON )
 
+set( TERRAIN_SOURCES "" )
+
+if( CESIUM )
+	set( TERRAIN_SOURCES 
+	  Terrain/Cesium.cpp Terrain/Cesium.hpp
+	  Terrain/GenericIOManager.cpp Terrain/GenericIOManager.hpp
+	  Terrain/HttpManager.cpp Terrain/HttpManager.hpp
+	  Terrain/LocalFileManager.cpp Terrain/LocalFileManager.hpp
+	  Terrain/GenericAssetAccessor.cpp Terrain/GenericAssetAccessor.hpp
+	  Terrain/CriticalAssetManager.cpp Terrain/CriticalAssetManager.hpp
+	  Terrain/HttpAssetAccessor.cpp Terrain/HttpAssetAccessor.hpp
+	  Terrain/TaskProcessor.cpp Terrain/TaskProcessor.hpp
+	  Terrain/RenderResourcesPreparer.cpp Terrain/RenderResourcesPreparer.hpp
+	)
+endif( CESIUM )
+
 add_library( InfinitariumEngine SHARED DataBuffer.cpp MotionControllerOrbit.cpp
   PointCloud.cpp PythonBridge.cpp Renderable.cpp RenderCommand.cpp RenderPass.cpp
   RenderProgram.cpp RenderState.cpp Scene.cpp Module.cpp DataPack.hpp Module.hpp
@@ -24,29 +40,23 @@ add_library( InfinitariumEngine SHARED DataBuffer.cpp MotionControllerOrbit.cpp
   Sprite.hpp SceneObject.hpp Transform.hpp Spheroid.hpp CoordinateSystem.hpp
   MotionController.cpp MotionController.hpp ImGUI.hpp ImGUI.cpp IImGUI.hpp IImGUI.cpp
   ObjectStore.cpp ObjectStore.hpp RenderTarget.cpp RenderTarget.hpp Database.cpp Database.hpp
-  
-  Terrain/Cesium.cpp Terrain/Cesium.hpp
-  Terrain/GenericIOManager.cpp Terrain/GenericIOManager.hpp
-  Terrain/HttpManager.cpp Terrain/HttpManager.hpp
-  Terrain/LocalFileManager.cpp Terrain/LocalFileManager.hpp
-  Terrain/GenericAssetAccessor.cpp Terrain/GenericAssetAccessor.hpp
-  Terrain/CriticalAssetManager.cpp Terrain/CriticalAssetManager.hpp
-  Terrain/HttpAssetAccessor.cpp Terrain/HttpAssetAccessor.hpp
-  Terrain/TaskProcessor.cpp Terrain/TaskProcessor.hpp
-  Terrain/RenderResourcesPreparer.cpp Terrain/RenderResourcesPreparer.hpp
+
+  ${TERRAIN_SOURCES}
 )
 
-source_group("Terrain" FILES 
-  Terrain/Cesium.cpp Terrain/Cesium.hpp
-  Terrain/GenericIOManager.cpp Terrain/GenericIOManager.hpp
-  Terrain/HttpManager.cpp Terrain/HttpManager.hpp
-  Terrain/LocalFileManager.cpp Terrain/LocalFileManager.hpp
-  Terrain/GenericAssetAccessor.cpp Terrain/GenericAssetAccessor.hpp
-  Terrain/CriticalAssetManager.cpp Terrain/CriticalAssetManager.hpp
-  Terrain/HttpAssetAccessor.cpp Terrain/HttpAssetAccessor.hpp
-  Terrain/TaskProcessor.cpp Terrain/TaskProcessor.hpp
-  Terrain/RenderResourcesPreparer.cpp Terrain/RenderResourcesPreparer.hpp
-)
+if( CESIUM )
+	source_group("Terrain" FILES 
+	  Terrain/Cesium.cpp Terrain/Cesium.hpp
+	  Terrain/GenericIOManager.cpp Terrain/GenericIOManager.hpp
+	  Terrain/HttpManager.cpp Terrain/HttpManager.hpp
+	  Terrain/LocalFileManager.cpp Terrain/LocalFileManager.hpp
+	  Terrain/GenericAssetAccessor.cpp Terrain/GenericAssetAccessor.hpp
+	  Terrain/CriticalAssetManager.cpp Terrain/CriticalAssetManager.hpp
+	  Terrain/HttpAssetAccessor.cpp Terrain/HttpAssetAccessor.hpp
+	  Terrain/TaskProcessor.cpp Terrain/TaskProcessor.hpp
+	  Terrain/RenderResourcesPreparer.cpp Terrain/RenderResourcesPreparer.hpp
+	)
+endif( CESIUM )
 
 set_property(TARGET InfinitariumEngine PROPERTY CXX_STANDARD 17)
 set_property(TARGET InfinitariumEngine PROPERTY CXX_STANDARD_REQUIRED ON)

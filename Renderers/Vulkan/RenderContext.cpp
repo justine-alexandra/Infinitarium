@@ -180,7 +180,7 @@ void VulkanRenderContext::createDescriptorPool() {
 
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.poolSizeCount = poolSizes.size();
+	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	poolInfo.pPoolSizes = poolSizes.data();
 
 	// Only 4 descriptor sets can be 'bound' simulatainiously on many platforms. Somthing to keep in mind. For max sets allocated, we'll choose a rather arbitary number for now. 
@@ -501,13 +501,13 @@ void VulkanRenderContext::submit( VkCommandBuffer buffer, VkFence vkFence, std::
 		waitSemaphores.emplace_back(renderFinishedSemaphores.back());
 	}
 	submitInfo.pWaitSemaphores = waitSemaphores.data();
-	submitInfo.waitSemaphoreCount = waitSemaphores.size();
+	submitInfo.waitSemaphoreCount = static_cast<uint32_t>( waitSemaphores.size() );
 
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &buffer;
 
 	//VkSemaphore signalSemaphores[] = { signalSemaphore };
-	submitInfo.signalSemaphoreCount = signalSemaphores.size();
+	submitInfo.signalSemaphoreCount = static_cast<uint32_t>( signalSemaphores.size() );
 	submitInfo.pSignalSemaphores = signalSemaphores.data();
 
 	// endFrame will wait the last of these semaphores to ensure all render ops are finished prior to present.

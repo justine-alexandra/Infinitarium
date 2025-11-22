@@ -79,9 +79,11 @@ public:
    void prepare(IRenderContext&) override;
    void update( UpdateParams& ) override; // Convert matrix to this coordinate system if position outside radius, traverse proxy
    void render(IRenderPass&) override;
-   
-   // TODO: this assumes the viewer is outside the system. May not always return value in expected units.
-   glm::vec3 getCenter() override;
+
+   void forceUpdate() { childActive = true;  }
+
+   bool isActive() { return active; }
+   bool isChildActive() { return childActive; }
    
 private:
    // Will need crossfade between these:
@@ -91,9 +93,11 @@ private:
    std::shared_ptr<SceneObject> pendingLookat;
    
    UniversalPoint center; // Center in parent units
+   glm::dvec3 localPos; // Location in parent units for navigation operations
    double radius; // In this CoordinateSystem's units
    UniversalPoint::Unit units; // Units of this system
-   bool active{ false };
+   bool active{ false }; 
+   bool childActive{ false };
    
    friend class boost::serialization::access;
    template<class Archive> void serialize( Archive& ar, const unsigned int );

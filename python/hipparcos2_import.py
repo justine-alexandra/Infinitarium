@@ -124,6 +124,8 @@ for record in t.filled():
     position.addVec3(pos[0], pos[1], pos[2])
     magnitude = appMagToAbsMag(record['Hpmag'], distPC)
     apparentMagV.add( magnitude )
+    if( numRecrods == 1000 ):
+        print( rgb )
     color.addVec3(rgb[0], rgb[1], rgb[2])
     numRecrods += 1
     # Insert record into application DB for representation in the navigation UI

@@ -11,9 +11,9 @@
 #include <libnova/neptune.h>
 #include <libnova/pluto.h>
 
-std::unique_ptr<OrbitalFactory> OrbitalFactory::_instance{nullptr};
+std::unique_ptr<IOrbitalFactory> IOrbitalFactory::_instance{nullptr};
 
-const OrbitalFactory& OrbitalFactory::instance() {
+const IOrbitalFactory& IOrbitalFactory::instance() {
     if (!_instance) {
         _instance = std::unique_ptr<OrbitalFactory>(new OrbitalFactory());
     }

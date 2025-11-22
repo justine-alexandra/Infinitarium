@@ -107,15 +107,28 @@ template<class Archive> void UniversalPoint::serialize( Archive& ar, const unsig
 CoordinateSystem::CoordinateSystem() {
     // Subscribe to navigational events to search children for object ID.
     auto lookAt = [this](const std::string& id, float duration ) {
-        std::function<bool(SceneObject&)> f{ [&id, duration](SceneObject& obj) {
-            if( obj.getName() == id ) {
-                obj.lookAt( duration );
+        CoordinateSystem* parentCoordSys{ nullptr };
+
+        std::function<bool(SceneObject&)> f{ [&id, &parentCoordSys, duration](SceneObject& obj) {
+            CoordinateSystem* coordSys = dynamic_cast<CoordinateSystem*>(&obj);
+            if (coordSys && !coordSys->isActive())
+                parentCoordSys = coordSys;
+            if (obj.getName() == id) {
+                if (parentCoordSys)
+                    parentCoordSys->lookAt( duration );
+                else
+                    obj.lookAt( duration );
                 return false;
             }
             return true;
-        }};
-        
-        visit( Visitor(f) );
+        } };
+
+        std::function<void(SceneObject&)> fpop{ [&id, &parentCoordSys](SceneObject& obj) {
+            if (&obj == parentCoordSys)
+                parentCoordSys = nullptr;
+        } };
+
+        visit(Accumulator(f, fpop));
     };
     
     std::shared_ptr<IDelegate> delegate = std::make_shared<EventDelegate<decltype(lookAt), const std::string&, float>>(lookAt);
@@ -123,15 +136,28 @@ CoordinateSystem::CoordinateSystem() {
     
     // TRACK //////
     auto track = [this](const std::string& id) {
-        std::function<bool(SceneObject&)> f{ [&id](SceneObject& obj) {
+        CoordinateSystem* parentCoordSys{ nullptr };
+
+        std::function<bool(SceneObject&)> f{ [&id, &parentCoordSys](SceneObject& obj) {
+            CoordinateSystem* coordSys = dynamic_cast<CoordinateSystem*>(&obj);
+            if (coordSys && !coordSys->isActive())
+                parentCoordSys = coordSys;
             if( obj.getName() == id ) {
-                obj.track();
+                if (parentCoordSys) // Track the parent coordinate system if target is inside
+                    parentCoordSys->track();
+                else
+                    obj.track();
                 return false;
             }
             return true;
         }};
+
+        std::function<void(SceneObject&)> fpop{ [&id, &parentCoordSys](SceneObject& obj) {
+            if( &obj == parentCoordSys )
+                parentCoordSys = nullptr;
+        } };
         
-        visit( Visitor(f) );
+        visit( Accumulator(f, fpop) );
     };
     
     std::shared_ptr<IDelegate> trackDelegate = std::make_shared<EventDelegate<decltype(track), const std::string&>>(track);
@@ -139,15 +165,29 @@ CoordinateSystem::CoordinateSystem() {
     
     // SELECT //////
     auto select = [this](const std::string& id) {
-        std::function<bool(SceneObject&)> f{ [&id](SceneObject& obj) {
-            if( obj.getName() == id ) {
-                obj.select();
+        CoordinateSystem* parentCoordSys{ nullptr };
+
+        std::function<bool(SceneObject&)> f{ [&id, &parentCoordSys](SceneObject& obj) {
+            CoordinateSystem* coordSys = dynamic_cast<CoordinateSystem*>(&obj);
+            if (coordSys && !coordSys->isActive())
+                parentCoordSys = coordSys;
+            if (obj.getName() == id) {
+                if (parentCoordSys) {
+                    parentCoordSys->forceUpdate();
+                }
+                else
+                    obj.select();
                 return false;
             }
             return true;
-        }};
-        
-        visit( Visitor(f) );
+        } };
+
+        std::function<void(SceneObject&)> fpop{ [&id, &parentCoordSys](SceneObject& obj) {
+            if (&obj == parentCoordSys)
+                parentCoordSys = nullptr;
+        } };
+
+        visit(Accumulator(f, fpop));
     };
     
     std::shared_ptr<IDelegate> delegateSelect = std::make_shared<EventDelegate<decltype(select), const std::string&>>(select);
@@ -155,15 +195,28 @@ CoordinateSystem::CoordinateSystem() {
     
     // TETHER //////
     auto tether = [this](const std::string& id) {
-        std::function<bool(SceneObject&)> f{ [&id](SceneObject& obj) {
-            if( obj.getName() == id ) {
-                obj.tether();
+        CoordinateSystem* parentCoordSys{ nullptr };
+
+        std::function<bool(SceneObject&)> f{ [&id, &parentCoordSys](SceneObject& obj) {
+            CoordinateSystem* coordSys = dynamic_cast<CoordinateSystem*>(&obj);
+            if (coordSys && !coordSys->isActive())
+                parentCoordSys = coordSys;
+            if (obj.getName() == id) {
+                if (parentCoordSys)
+                    parentCoordSys->tether();
+                else
+                    obj.tether();
                 return false;
             }
             return true;
-        }};
-        
-        visit( Visitor(f) );
+        } };
+
+        std::function<void(SceneObject&)> fpop{ [&id, &parentCoordSys](SceneObject& obj) {
+            if (&obj == parentCoordSys)
+                parentCoordSys = nullptr;
+        } };
+
+        visit(Accumulator(f, fpop));
     };
     
     std::shared_ptr<IDelegate> delegateTether = std::make_shared<EventDelegate<decltype(tether), const std::string&>>(tether);
@@ -223,10 +276,10 @@ void CoordinateSystem::update( UpdateParams& params ) {
    UpdateParams origView(params, params.getProjection(), view, params.getModel());
    
    // Apply model transform to coordinate system center.
-   glm::dvec3 c = glm::dvec4(center.getPoint(), 1.0); // Parent units
-   UniversalPoint transformed_center( c, center.getUnit() ); // Parent units
+   localPos = params.getModel() * glm::dvec4(center.getPoint(), 1.0); // Parent units
+   UniversalPoint transformed_center(localPos, center.getUnit() ); // Parent units
    UniversalPoint currentHome = motionController->getHome(); // Units of 'active' CoordinateSystem
-   UniversalPoint newHome(center.getPoint(), units);
+   UniversalPoint newHome(localPos, units);
    
    glm::vec3 eye = glm::inverse(view)[3];
    UniversalPoint camera{ eye.x, eye.y, eye.z, currentHome.getUnit() };
@@ -240,36 +293,38 @@ void CoordinateSystem::update( UpdateParams& params ) {
    //std::cout << "radiusInActiveUnits " << radiusInActiveUnits << " distance " << distance << " units " << units << std::endl;
    //std::cout << " distanceActive " << distanceActive << std::endl;
   
-   if( motionController->getHome() == newHome && distanceActive < radius ) {
-      // Active system is in the same units as this system 'and' distance from center is less than radius;
-      // radius being in this system's units. Traverse this CoordinateSystem's sub-graph.
-      active = true;
-      SceneObject::update(origView);
+   if (motionController->getHome() == newHome && distanceActive < radius) {
+       // Active system is in the same units as this system 'and' distance from center is less than radius;
+       // radius being in this system's units. Traverse this CoordinateSystem's sub-graph.
+       active = true;
+       SceneObject::update(origView);
    }
-   else if ( motionController->getHome() == newHome /* distanceActive > radius implied */ ) {
-      // Active system is in the same units as this system but we've exited. Pop to parent units.
-      // Do not traverse sub-graph.
-      std::cout << "Deactiveate Subscene" << std::endl;
-      active = false;
-      motionController->setMovementMultiple(restoreMultiple);
-      motionController->popHome();
+   else if (motionController->getHome() == newHome /* distanceActive > radius implied */) {
+       // Active system is in the same units as this system but we've exited. Pop to parent units.
+       // Do not traverse sub-graph.
+       std::cout << "Deactiveate Subscene " << getName() << std::endl;
+       active = false;
+       motionController->setMovementMultiple(restoreMultiple);
+       motionController->popHome();
    }
-   else if( units < currentHome.getUnit() && distance < radiusInActiveUnits) {
-      // Active system is a parent of the current system and we've crossed the boundry into this system.
-      // Set as new active system. 
-      std::cout << "Activate Subscene" << std::endl;
-      active = true;
-      motionController->pushHome( newHome );
-      restoreMultiple = motionController->setMovementMultiple( radius / 1000.0 );
+   else if (units < currentHome.getUnit() && distance < radiusInActiveUnits) {
+       // Active system is a parent of the current system and we've crossed the boundry into this system.
+       // Set as new active system. 
+       std::cout << "Activate Subscene " << getName() << std::endl;
+       active = true;
+       motionController->pushHome(newHome);
+       restoreMultiple = motionController->setMovementMultiple(radius / 1000.0);
    }
-   else if( active ) {
-      // A nested system is active below us, but still want to render sub-graph of this system.
-      // Obtain a view matrix thats scaled for this coordinate system and override the active one.
-      glm::dmat4 localView = motionController->localView( motionController->childSystem(newHome) );
-      
-      UpdateParams paramsCopy( params, params.getProjection(), localView, params.getModel() );
-      SceneObject::update( paramsCopy );
+   else if (active) {
+       // A nested system is active below us, but still want to render sub-graph of this system.
+       // Obtain a view matrix thats scaled for this coordinate system and override the active one.
+       glm::dmat4 localView = motionController->localView(motionController->childSystem(newHome));
+
+       UpdateParams paramsCopy(params, params.getProjection(), localView, params.getModel());
+       SceneObject::update(paramsCopy);
    }
+   else
+       updateSelf(params); // Performs base class update operations but does not continue traversal of children
 }
 
 void CoordinateSystem::render(IRenderPass& renderPass) {
@@ -279,11 +334,6 @@ void CoordinateSystem::render(IRenderPass& renderPass) {
     else {
         SceneObject::render(renderPass);
     }
-}
-
-glm::vec3 CoordinateSystem::getCenter() {
-   glm::dvec3 c { glm::dvec4(center.getPoint(), 1.0) };
-   return c;
 }
 
 template<class Archive> void CoordinateSystem::serialize( Archive& ar, const unsigned int version ) {
